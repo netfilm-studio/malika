@@ -663,6 +663,49 @@ function closeCredits() {
   if (crAnim) { cancelAnimationFrame(crAnim); crAnim = null; }
 }
 
+/* ═══ CREDITS: контент из КЛИЕНТ (текст истории, статистика, роли) ═══ */
+function initCreditsContent() {
+  // Текст истории — из КЛИЕНТ.история, последняя фраза каждого абзаца выделяется жирным
+  const loveEl = document.querySelector('.cr-love');
+  if (loveEl && Array.isArray(КЛИЕНТ.история) && КЛИЕНТ.история.length) {
+    loveEl.innerHTML = КЛИЕНТ.история.map(paragraph => {
+      const sentences = paragraph.split(/(?<=[.!?])\s+/).filter(Boolean);
+      if (sentences.length > 1) {
+        const last = sentences.pop();
+        return sentences.join(' ') + ' <strong>' + last + '</strong>';
+      }
+      return '<strong>' + paragraph + '</strong>';
+    }).join('<br/><br/>');
+  }
+
+  // Статистика — 3 числа из КЛИЕНТ.статистика
+  const statsEl = document.querySelector('.cr-stats');
+  if (statsEl && Array.isArray(КЛИЕНТ.статистика) && КЛИЕНТ.статистика.length) {
+    statsEl.innerHTML = КЛИЕНТ.статистика.map(s =>
+      `<div><span class="cr-stat-n">${s.число}</span><div class="cr-stat-l">${s.подпись}</div></div>`
+    ).join('');
+  }
+
+  // Роли — она/он + все пары из КЛИЕНТ.датыКлючевые + рейтинг
+  const rolesEl = document.querySelector('.cr-roles');
+  if (rolesEl) {
+    const row = (k, v) => `<div class="cr-role"><span class="cr-role-k">${k}</span><div class="cr-role-dots"></div><span class="cr-role-v">${v}</span></div>`;
+    const rows = [];
+    if (КЛИЕНТ.она) rows.push(row('Главная героиня', КЛИЕНТ.она));
+    if (КЛИЕНТ.он) rows.push(row('Главный герой', КЛИЕНТ.он));
+    if (КЛИЕНТ.датыКлючевые) {
+      Object.entries(КЛИЕНТ.датыКлючевые).forEach(([key, val]) => {
+        if (key === 'Вместе') return; // дублирует первое число в cr-stats — не показываем дважды
+        if (!val) return;
+        const value = String(val).split(' / ').join(' · '); // единый разделитель городов/значений
+        rows.push(row(key, value));
+      });
+    }
+    if (КЛИЕНТ.рейтинг) rows.push(row('Рейтинг', '★★★★★ ' + КЛИЕНТ.рейтинг));
+    rolesEl.innerHTML = rows.join('');
+  }
+}
+
 /* ═══ PLAYER ═══ */
 let cur = 0, isMini = false, isPlaying = false;
 
@@ -1615,6 +1658,8 @@ function initAll() {
   if (p1) p1.src = EP1;
   if (p2) p2.src = EP2;
   if (p3) p3.src = EP3;
+  // Заполнить текст титров (историю, статистику, роли) данными клиента
+  initCreditsContent();
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initAll);
